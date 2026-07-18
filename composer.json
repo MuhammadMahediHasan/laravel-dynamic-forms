@@ -1,0 +1,45 @@
+{
+    "name": "muhammadmahedihasan/laravel-dynamic-forms",
+    "description": "A headless dynamic form builder for Laravel supporting surveys, quizzes, assessments, and monitoring etc.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Muhammad Mahedi Hasan",
+            "email": "mamahdih727@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/database": "^11.0|^12.0",
+        "illuminate/http": "^11.0|^12.0",
+        "illuminate/validation": "^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0",
+        "pestphp/pest": "^2.0|^3.0",
+        "pestphp/pest-plugin-laravel": "^2.0|^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MuhammadMahediHasan\\Df\\": "src/",
+            "MuhammadMahediHasan\\Df\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MuhammadMahediHasan\\Df\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "extra": {
+        "laravel": {
+            "providers": [
+                "MuhammadMahediHasan\\Df\\DynamicFormsServiceProvider"
+            ]
+        }
+    }
+}
