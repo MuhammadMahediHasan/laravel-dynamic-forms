@@ -11,9 +11,11 @@ use MuhammadMahediHasan\Df\Events\FormResponseSubmitted;
 use MuhammadMahediHasan\Df\Models\DynamicForm;
 use MuhammadMahediHasan\Df\Models\FormInput;
 use MuhammadMahediHasan\Df\Models\FormResponse;
-use App\Models\User;
+use MuhammadMahediHasan\Df\Tests\Models\User;
+use MuhammadMahediHasan\Df\Tests\TestCase;
+use MuhammadMahediHasan\Df\Enums\FormStatus;
 
-uses(Tests\TestCase::class, RefreshDatabase::class);
+uses(TestCase::class, RefreshDatabase::class);
 
 beforeEach(function () {
     // Seed the package input fields dictionary
@@ -39,7 +41,7 @@ test('it can build a dynamic form recursively', function () {
             'type' => 'Survey',
             'slug' => 'general-survey',
             'description' => 'A decoupled dynamic survey form',
-            'status' => 'Active',
+            'status' => FormStatus::ACTIVE,
         ],
         elements: [
             [
@@ -328,7 +330,6 @@ test('it scopes active form inputs and published forms', function () {
         'name' => 'Active Form',
         'slug' => 'active-form',
         'status' => \MuhammadMahediHasan\Df\Enums\FormStatus::ACTIVE,
-        'is_public' => true,
     ]);
 
     $pendingForm = DynamicForm::create([
@@ -336,7 +337,6 @@ test('it scopes active form inputs and published forms', function () {
         'name' => 'Pending Form',
         'slug' => 'pending-form',
         'status' => \MuhammadMahediHasan\Df\Enums\FormStatus::PENDING,
-        'is_public' => true,
     ]);
 
     $published = DynamicForm::published()->get();
@@ -362,7 +362,7 @@ test('it validates allowed respondent and subject morph types', function () {
     );
 
     $prefix = config('dynamic-forms.route_prefix', 'api/v1');
-    $url = "/{$prefix}/dynamic-forms/{$form->id}/submissions";
+    $url = "/{$prefix}/df/{$form->id}/submissions";
 
     // Call submit API endpoint with unauthorized respondent_type
     $response = $this->postJson($url, [
@@ -378,4 +378,30 @@ test('it validates allowed respondent and subject morph types', function () {
 
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['respondent_type']);
+});
+
+test('it automatically generates unique slugs on creation and updates', function () {
+    $form1 = DynamicForm::create([
+        'name' => 'Feedback Form',
+        'type' => 'Survey',
+    ]);
+
+    $form2 = DynamicForm::create([
+        'name' => 'Feedback Form',
+        'type' => 'Survey',
+    ]);
+
+    $form3 = DynamicForm::create([
+        'name' => 'Feedback Form',
+        'type' => 'Survey',
+        'slug' => 'feedback-form',
+    ]);
+
+    expect($form1->slug)->toBe('feedback-form');
+    expect($form2->slug)->toBe('feedback-form-1');
+    expect($form3->slug)->toBe('feedback-form-2');
+
+    // Test update - setting it to a colliding slug (feedback-form-1 is owned by form2)
+    $form3->update(['slug' => 'feedback-form-1']);
+    expect($form3->slug)->toBe('feedback-form-1-1');
 });

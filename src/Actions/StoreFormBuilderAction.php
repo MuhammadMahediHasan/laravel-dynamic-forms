@@ -2,6 +2,7 @@
 
 namespace MuhammadMahediHasan\Df\Actions;
 
+use MuhammadMahediHasan\Df\Enums\FormStatus;
 use MuhammadMahediHasan\Df\Models\DynamicForm;
 use MuhammadMahediHasan\Df\Models\DynamicFormInput;
 use MuhammadMahediHasan\Df\Support\FormInputOptionsStorageNormalizer;
@@ -28,9 +29,7 @@ class StoreFormBuilderAction
                 'name' => $data['name'],
                 'slug' => $data['slug'],
                 'description' => $data['description'] ?? null,
-                'status' => $data['status'] ?? 'Pending',
-                'end_at' => $data['end_at'] ?? null,
-                'is_public' => $data['is_public'] ?? false,
+                'status' => $data['status'] ?? FormStatus::PENDING,
             ]);
 
             $idMap = [];

@@ -13,6 +13,23 @@ class UpdateFormBuilderRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('elements')) {
+            $elements = array_map(function ($element) {
+                if (isset($element['input_id']) && !isset($element['form_input_id'])) {
+                    $element['form_input_id'] = $element['input_id'];
+                }
+                return $element;
+            }, $this->input('elements'));
+            $this->merge(['elements' => $elements]);
+        }
+
+        if (!$this->has('slug') && $this->has('name')) {
+            $this->merge(['slug' => \Illuminate\Support\Str::slug($this->input('name'))]);
+        }
+    }
+
     public function rules(): array
     {
         $formId = $this->route('form')?->id;
@@ -25,11 +42,9 @@ class UpdateFormBuilderRequest extends FormRequest
                 'max:100',
                 Rule::in(config('dynamic-forms.form_types', ['Survey', 'Quiz', 'Assessment', 'Monitoring'])),
             ],
-            'slug' => 'nullable|string|max:255|unique:df_forms,slug,' . $formId,
+            'slug' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'status' => ['nullable', Rule::enum(FormStatus::class)],
-            'end_at' => 'nullable|date',
-            'is_public' => 'nullable|boolean',
             'elements' => 'required|array',
             'elements.*.id' => 'nullable|integer|exists:df_fields,id',
             'elements.*.form_input_id' => 'required|integer|exists:df_form_inputs,id',

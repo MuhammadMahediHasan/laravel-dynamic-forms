@@ -57,9 +57,5 @@ class DynamicFormsServiceProvider extends ServiceProvider
             config(['dynamic-forms.locales' => $locales]);
         }
 
-        // Share configured locales with Inertia
-        if (class_exists(\Inertia\Inertia::class)) {
-            \Inertia\Inertia::share('dynamic_forms_locales', $locales);
-        }
     }
 }

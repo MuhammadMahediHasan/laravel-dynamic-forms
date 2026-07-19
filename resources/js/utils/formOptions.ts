@@ -14,19 +14,35 @@ export type BilingualOptionLists = OptionLists;
 export type BilingualTextOptions = TextOptions;
 export type FormElementOptions = OptionLists | null;
 
+// ---------------------------------------------------------------------------
+// Locale store — decoupled from Inertia.
+// Call setConfigLocales(locales) once after fetching GET /api/v1/dynamic-forms/config.
+// Falls back to the Inertia shared prop (legacy) and then to ['en'].
+// ---------------------------------------------------------------------------
+let _configLocales: string[] | null = null;
+
+export function setConfigLocales(locales: string[]): void {
+    _configLocales = locales.includes('en') ? locales : ['en', ...locales];
+}
+
 export function getConfigLocales(): string[] {
+    // 1. Use the explicitly set store value (set from API response)
+    if (_configLocales && _configLocales.length > 0) {
+        return _configLocales;
+    }
+
+    // 2. Legacy fallback: read from Inertia shared props (still works if host uses the share)
     try {
         const page = usePage();
         const locales = page?.props?.dynamic_forms_locales as string[];
         if (Array.isArray(locales) && locales.length > 0) {
-            if (!locales.includes('en')) {
-                return ['en', ...locales];
-            }
-            return locales;
+            return locales.includes('en') ? locales : ['en', ...locales];
         }
     } catch (e) {
-        // usePage might throw outside Inertia context (e.g. unit tests, preview mode, etc.)
+        // usePage may throw outside an Inertia context (tests, preview mode, etc.)
     }
+
+    // 3. Hard fallback
     return ['en'];
 }
 

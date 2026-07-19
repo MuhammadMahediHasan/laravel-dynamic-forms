@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import SvgIcon from './SvgIcon.vue';
+import Label from './Label.vue';
+import Input from './Input.vue';
+import Select from './Select.vue';
 import { ref, watch, computed } from "vue";
 import {
     getPrimaryOptionValues,
@@ -10,28 +13,7 @@ import {
     type FormElementOptions,
 } from '../utils/formOptions';
 
-// Types & Interfaces
-interface LocalizedText extends Record<string, string> {}
-
-interface FormElement {
-    id: string;
-    type: string;
-    label: LocalizedText;
-    placeholder: LocalizedText;
-    hints?: LocalizedText;
-    icon?: string;
-    icon_path?: string;
-    required: boolean;
-    has_action: boolean;
-    options: FormElementOptions;
-    correct_answer?: string[];
-    marks?: number;
-    condition_input_id?: string | number | null;
-    condition_value?: string;
-    is_repeatable?: boolean;
-    repeat_min?: number;
-    repeat_max?: number | null;
-}
+import type { LocalizedText, FormElement } from '../types/formBuilder';
 
 interface Props {
     element: FormElement;
@@ -276,7 +258,11 @@ const getConditionFieldOptions = computed(() => {
         return [];
     }
 
-    return getPrimaryOptionValues(conditionField.options, resolvedLocales.value);
+    const primaryLoc = resolvedLocales.value[0] || 'en';
+    const lists = getOptionLists(conditionField.options, resolvedLocales.value);
+    return (lists[primaryLoc] || []).filter(
+        (item) => item.label.trim() !== '' || item.value.trim() !== ''
+    );
 });
 
 // Parse options for correct answer selection
@@ -311,7 +297,6 @@ watch(
         if (!el) return;
         // Coerce to boolean reliably
         (el as any).required = !!Number((el as any).required);
-        (el as any).has_action = !!Number((el as any).has_action);
     },
     { immediate: true }
 );
@@ -363,32 +348,7 @@ watch(
             </div>
 
             <div class="flex shrink-0 items-center gap-1">
-                <button
-                    v-if="!embedded && props.canMoveUp !== false"
-                    type="button"
-                    @click="$emit('moveUp', element.id)"
-                    class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-                    :disabled="props.index === 0"
-                    title="Move up"
-                >
-                    <SvgIcon
-                        name="mdi:arrow-up"
-                        class="h-4 w-4"
-                    />
-                </button>
-                <button
-                    v-if="!embedded && props.canMoveDown !== false"
-                    type="button"
-                    @click="$emit('moveDown', element.id)"
-                    class="rounded p-1 text-muted-foreground hover:bg-muted hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-                    :disabled="props.canMoveDown === false"
-                    title="Move down"
-                >
-                    <SvgIcon
-                        name="mdi:arrow-down"
-                        class="h-4 w-4"
-                    />
-                </button>
+
                 <button
                     type="button"
                     @click="isCollapsed = !isCollapsed"
@@ -419,15 +379,14 @@ watch(
             :class="embedded ? 'px-3 py-3' : 'px-4 py-4'"
         >
             <div>
-                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300"> Label </label>
+                <Label>Label</Label>
                 <div class="mt-1 grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div v-for="loc in resolvedLocales" :key="loc" class="flex rounded-md shadow-sm">
                         <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-semibold select-none uppercase">
                             {{ loc }}
                         </span>
-                        <input
+                        <Input
                             :id="`label-${loc}-${index}`"
-                            type="text"
                             class="flex-1 min-w-0 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-r-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                             v-model="element.label[loc]"
                             @input="emitUpdate('label', { ...element.label })"
@@ -436,15 +395,14 @@ watch(
                 </div>
             </div>
             <div v-if="element.type !== 'group' && element.type !== 'header'">
-                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300"> Placeholder </label>
+                <Label>Placeholder</Label>
                 <div class="mt-1 grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div v-for="loc in resolvedLocales" :key="loc" class="flex rounded-md shadow-sm">
                         <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-semibold select-none uppercase">
                             {{ loc }}
                         </span>
-                        <input
+                        <Input
                             :id="`placeholder-${loc}-${index}`"
-                            type="text"
                             class="flex-1 min-w-0 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-r-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                             v-model="element.placeholder[loc]"
                             @input="emitUpdate('placeholder', { ...element.placeholder })"
@@ -454,7 +412,7 @@ watch(
             </div>
             <div v-if="hasOptionsType" class="space-y-2">
                 <div class="flex items-center justify-between gap-2">
-                    <label class="text-xs font-semibold text-gray-700 dark:text-gray-300"> Options </label>
+                    <Label class="text-xs font-semibold text-gray-700 dark:text-gray-300">Options</Label>
                     <button
                         type="button"
                         class="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-primary/20 px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/5 cursor-pointer"
@@ -476,13 +434,12 @@ watch(
                                 <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-semibold select-none uppercase">
                                     {{ loc }}
                                 </span>
-                                <input
+                                <Input
                                     :id="`options-${loc}-${index}-${rowIndex}`"
-                                    type="text"
                                     class="flex-1 min-w-0 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-r-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                                    :value="optionLists[loc]?.[rowIndex]?.label ?? ''"
+                                    :model-value="optionLists[loc]?.[rowIndex]?.label ?? ''"
                                     :placeholder="`Option ${rowIndex + 1}`"
-                                    @input="(e) => updateOptionRow(loc, rowIndex, (e.target as HTMLInputElement).value || '')"
+                                    @update:model-value="(val) => updateOptionRow(loc, rowIndex, val || '')"
                                 />
                             </div>
                         </div>
@@ -506,26 +463,26 @@ watch(
             <!-- Points/Marks (Quiz & Assessment) -->
             <div v-if="isGradableType && element.type !== 'group' && element.type !== 'header'"
                 class="flex items-center gap-2">
-                <label :for="`marks-${index}`" class="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Points:</label>
-                <input
+                <Label :for="`marks-${index}`" class="text-xs font-semibold text-gray-700 dark:text-gray-300 whitespace-nowrap">Points:</Label>
+                <Input
                     :id="`marks-${index}`"
                     type="number"
-                    min="1"
+                    :min="1"
                     class="w-20 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                    :value="element.marks ?? 1"
-                    @input="emitUpdate('marks', Math.max(1, parseInt(($event.target as HTMLInputElement).value) || 1))"
+                    :model-value="element.marks ?? 1"
+                    @update:model-value="(val) => emitUpdate('marks', Math.max(1, parseInt(val) || 1))"
                 />
             </div>
 
             <!-- Correct Answer (Quiz & Assessment) -->
             <div v-if="isGradableType && hasOptionsType"
                 class="border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 rounded-md p-3 space-y-3">
-                <label class="block text-sm font-semibold text-green-700 dark:text-green-400">
-                    ✓ Correct Answer <span class="text-red-500">*</span>
+                <Label class="block text-sm font-semibold text-green-700 dark:text-green-400" :required="true">
+                    ✓ Correct Answer
                     <span class="ml-1 text-xs font-normal text-gray-500 dark:text-gray-400">
                         {{ ['radio', 'select'].includes(element.type) ? '(pick one)' : '(pick all that apply)' }}
                     </span>
-                </label>
+                </Label>
 
                 <div v-if="parsedOptionsForCorrectAnswer.length === 0" class="text-xs text-gray-400 italic">
                     Add options above to select correct answers.
@@ -560,20 +517,19 @@ watch(
             </div>
 
             <div v-if="element.type === 'file'">
-                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300"> Hints/Note </label>
+                <Label>Hints/Note</Label>
                 <div class="mt-1 grid grid-cols-1 gap-2 md:grid-cols-2">
                     <div v-for="loc in resolvedLocales" :key="loc" class="flex rounded-md shadow-sm">
                         <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs font-semibold select-none uppercase">
                             {{ loc }}
                         </span>
-                        <input
+                        <Input
                             :id="`hints-${loc}-${index}`"
-                            type="text"
                             class="flex-1 min-w-0 block w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-r-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                            :value="element.hints?.[loc] ?? ''"
-                            @input="(e) => {
+                            :model-value="element.hints?.[loc] ?? ''"
+                            @update:model-value="(val) => {
                                 const hints = { ...(element.hints || {}) };
-                                hints[loc] = (e.target as HTMLInputElement).value || '';
+                                hints[loc] = val || '';
                                 emitUpdate('hints', hints);
                             }"
                         />
@@ -590,17 +546,7 @@ watch(
                             v-model="element.required"
                             @change="emitUpdate('required', !!element.required)"
                         />
-                        <label :for="`required-${index}`" class="text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none"> Required field </label>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input
-                            type="checkbox"
-                            :id="`has_action-${index}`"
-                            class="h-4 w-4 rounded border-gray-300 dark:border-gray-700 text-primary focus:ring-primary cursor-pointer"
-                            v-model="element.has_action"
-                            @change="emitUpdate('has_action', !!element.has_action)"
-                        />
-                        <label :for="`has_action-${index}`" class="text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none"> Has Action </label>
+                        <Label :for="`required-${index}`" class="text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none">Required field</Label>
                     </div>
                     <div class="flex items-center gap-2">
                         <input
@@ -610,28 +556,28 @@ watch(
                             v-model="element.is_repeatable"
                             @change="emitUpdate('is_repeatable', !!element.is_repeatable)"
                         />
-                        <label :for="`is_repeatable-${index}`" class="text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none"> Allow "Add More" (Repeatable) </label>
+                        <Label :for="`is_repeatable-${index}`" class="text-xs font-semibold text-gray-700 dark:text-gray-300 cursor-pointer select-none">Allow "Multiple Answer Fields"</Label>
                     </div>
                 </div>
 
                 <!-- Repeat Min/Max -->
                 <div v-if="element.is_repeatable" class="grid grid-cols-2 gap-2 pl-3 border-l-2 border-gray-200 dark:border-gray-700">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-650 dark:text-gray-400">Min Repeat</label>
-                        <input
+                        <Label class="block text-xs font-semibold text-gray-650 dark:text-gray-400">Min Repeat</Label>
+                        <Input
                             type="number"
-                            v-model.number="element.repeat_min"
-                            min="1"
+                            :min="1"
+                            v-model="element.repeat_min"
                             @change="emitUpdate('repeat_min', element.repeat_min)"
                             class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                         />
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-650 dark:text-gray-400">Max Repeat (leave empty for unlimited)</label>
-                        <input
+                        <Label class="block text-xs font-semibold text-gray-650 dark:text-gray-400">Max Repeat (leave empty for unlimited)</Label>
+                        <Input
                             type="number"
-                            v-model.number="element.repeat_max"
-                            min="1"
+                            :min="1"
+                            v-model="element.repeat_max"
                             @change="emitUpdate('repeat_max', element.repeat_max || null)"
                             class="w-full px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                         />
@@ -640,41 +586,42 @@ watch(
 
                 <!-- Conditional Display -->
                 <div class="border-t border-gray-100 dark:border-gray-700 pt-3 mt-3">
-                    <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">Conditional Display <span class="text-[10px] font-normal text-gray-500 dark:text-gray-400 mb-2">(Show this field only when another field has a specific value)</span></label>
+                    <Label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Conditional Display
+                        <span class="text-[10px] font-normal text-gray-500 dark:text-gray-400 mb-2">(Show this field only when another field has a specific value)</span>
+                    </Label>
                     <div class="space-y-2">
                         <div>
-                            <label class="block text-[11px] text-gray-500 mb-1">Depends on field:</label>
-                            <select
+                            <Label>Depends on field:</Label>
+                            <Select
                                 v-model="element.condition_input_id"
-                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                                 @change="emitUpdate('condition_input_id', element.condition_input_id || null)"
                             >
                                 <option :value="null">Select a field (optional)</option>
                                 <option v-for="item in availableFormElements" :key="item.id" :value="item.id">
                                     {{ item.label }}
                                 </option>
-                            </select>
+                            </Select>
                         </div>
 
                         <div v-if="element.condition_input_id && getConditionFieldOptions.length > 0">
-                            <label class="block text-[11px] text-gray-500 mb-1">Show when value is:</label>
-                            <select
+                            <Label>Show when value is:</Label>
+                            <Select
                                 v-model="element.condition_value"
-                                class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                                 @change="emitUpdate('condition_value', element.condition_value || '')"
                             >
                                 <option value="">Select value</option>
-                                <option v-for="val in getConditionFieldOptions" :key="val" :value="val">
-                                    {{ val }}
+                                <option v-for="opt in getConditionFieldOptions" :key="opt.value" :value="opt.value">
+                                    {{ opt.label }}
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
                 </div>
             </template>
 
             <div v-if="element.type === 'group'">
-                <label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3"> Image or Icon (optional) </label>
+                <Label class="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-3">Image or Icon (optional)</Label>
 
                 <div class="space-y-3">
                     <!-- File Upload -->

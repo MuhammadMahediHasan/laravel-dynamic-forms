@@ -46,8 +46,6 @@ const emit = defineEmits<{
     dragEnd: [];
     updateElement: [id: string, field: string, value: unknown];
     removeElement: [id: string];
-    moveUp: [id: string];
-    moveDown: [id: string];
     groupDragEnter: [groupId: string, event: DragEvent];
     groupDragLeave: [groupId: string, event: DragEvent];
     builderDragStart: [type: string];
@@ -59,7 +57,7 @@ const emit = defineEmits<{
 
 <template>
     <div
-        class="flex max-h-[calc(123vh-200px)] flex-col overflow-y-auto rounded-lg bg-white shadow-sm dark:bg-gray-800"
+        class="flex flex-col overflow-y-auto rounded-lg bg-white shadow-sm dark:bg-gray-800"
     >
         <div
             class="sticky top-0 z-10 flex items-center justify-between border-b border-primary/10 bg-primary/5 px-6 py-3 dark:border-primary/20 dark:bg-primary/10"
@@ -226,8 +224,6 @@ const emit = defineEmits<{
                                         emit('updateElement', id, field, value)
                                 "
                                 @remove="emit('removeElement', $event)"
-                                @move-up="emit('moveUp', $event)"
-                                @move-down="emit('moveDown', $event)"
                             />
 
                             <FormGroupChildren
@@ -247,8 +243,6 @@ const emit = defineEmits<{
                                         emit('updateElement', id, field, value)
                                 "
                                 @remove="emit('removeElement', $event)"
-                                @move-up="emit('moveUp', $event)"
-                                @move-down="emit('moveDown', $event)"
                                 @group-drag-enter="
                                     (groupId, event) =>
                                         emit('groupDragEnter', groupId, event)

@@ -5,7 +5,7 @@ namespace MuhammadMahediHasan\Df\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use Illuminate\Support\Str;
 use MuhammadMahediHasan\Df\Enums\FormStatus;
 
 class DynamicForm extends Model
@@ -20,19 +20,15 @@ class DynamicForm extends Model
         'slug',
         'description',
         'status',
-        'end_at',
-        'is_public',
     ];
 
     protected $casts = [
-        'is_public' => 'boolean',
-        'end_at' => 'datetime',
         'status' => FormStatus::class,
     ];
 
     public function scopePublished($query)
     {
-        return $query->where('status', FormStatus::ACTIVE)->where('is_public', true);
+        return $query->where('status', FormStatus::ACTIVE);
     }
 
     /**
@@ -49,5 +45,61 @@ class DynamicForm extends Model
     public function responses(): HasMany
     {
         return $this->hasMany(FormResponse::class, 'df_form_id');
+    }
+
+    /**
+     * The "booted" method of the model.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($form) {
+            if (empty($form->slug)) {
+                $form->slug = Str::slug($form->name);
+            } else {
+                $form->slug = Str::slug($form->slug);
+            }
+
+            // Ensure uniqueness
+            $originalSlug = $form->slug;
+            $count = 1;
+            while (static::where('slug', $form->slug)->exists()) {
+                $form->slug = "{$originalSlug}-{$count}";
+                $count++;
+            }
+        });
+
+        static::updating(function ($form) {
+            if ($form->isDirty('name') && !$form->isDirty('slug')) {
+                $form->slug = Str::slug($form->name);
+            } elseif ($form->isDirty('slug')) {
+                $form->slug = Str::slug($form->slug);
+            }
+
+            // Ensure uniqueness, ignoring current record
+            if ($form->isDirty('slug')) {
+                $originalSlug = $form->slug;
+                $count = 1;
+                while (static::where('slug', $form->slug)->where('id', '!=', $form->id)->exists()) {
+                    $form->slug = "{$originalSlug}-{$count}";
+                    $count++;
+                }
+            }
+        });
+    }
+
+    /**
+     * Retrieve the model for a bound value (supports both ID and slug).
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field) {
+            return $this->where($field, $value)->firstOrFail();
+        }
+
+        if (is_numeric($value)) {
+            return $this->where('id', $value)->firstOrFail();
+        }
+
+        return $this->where('slug', $value)->firstOrFail();
     }
 }

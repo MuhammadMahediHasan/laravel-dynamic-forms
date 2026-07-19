@@ -15,6 +15,37 @@ use MuhammadMahediHasan\Df\Models\FormInput;
 class FormBuilderApiController extends Controller
 {
     /**
+     * List all dynamic forms.
+     */
+    public function index(): JsonResponse
+    {
+        $forms = DynamicForm::with('inputs.input')->latest()->get();
+
+        return response()->json([
+            'data' => DynamicFormResource::collection($forms),
+        ]);
+    }
+
+    /**
+     * Return package configuration consumed by the frontend builder.
+     * Includes form types and configured locales.
+     */
+    public function getConfig(): JsonResponse
+    {
+        $types = collect(config('dynamic-forms.form_types', []))->map(function ($type) {
+            return [
+                'option' => $type,
+                'value'  => $type,
+            ];
+        })->values()->all();
+
+        return response()->json([
+            'types'   => $types,
+            'locales' => config('dynamic-forms.locales', ['en']),
+        ]);
+    }
+
+    /**
      * Get the catalog of form input components.
      */
     public function getInputs(): JsonResponse
@@ -71,5 +102,15 @@ class FormBuilderApiController extends Controller
         return response()->json([
             'data' => new DynamicFormResource($form->load('inputs.input')),
         ]);
+    }
+
+    /**
+     * Delete the specified form.
+     */
+    public function destroy(DynamicForm $form): JsonResponse
+    {
+        $form->delete();
+
+        return response()->json(['message' => 'Dynamic form deleted successfully.']);
     }
 }

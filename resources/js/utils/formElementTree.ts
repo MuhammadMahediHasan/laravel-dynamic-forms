@@ -1,5 +1,6 @@
 import {
     createDefaultOptionLists,
+    getConfigLocales,
     hasOptionsFieldType,
     normalizeElementOptions,
     serializeOptionsForStorage,
@@ -8,6 +9,7 @@ import type {
     AvailableElement,
     FlatFormElementPayload,
     FormElement,
+    LocalizedText,
 } from '../types/formBuilder';
 
 export function generateElementId(): string {
@@ -40,11 +42,39 @@ export function reconstructElementTree(
     return rootElements;
 }
 
+function normalizeTranslatable(val: any): LocalizedText {
+    const locales = getConfigLocales();
+    const result: LocalizedText = {
+        en: '',
+        bn: '',
+    };
+
+    locales.forEach((loc) => {
+        result[loc] = '';
+    });
+
+    if (val && typeof val === 'object') {
+        locales.forEach((loc) => {
+            if (val[loc] !== undefined && val[loc] !== null) {
+                result[loc] = String(val[loc]);
+            }
+        });
+    } else if (typeof val === 'string' && val.trim() !== '') {
+        const primaryLoc = locales[0] || 'en';
+        result[primaryLoc] = val;
+    }
+
+    return result;
+}
+
 export function normalizeFormElement(element: FormElement): FormElement {
     const options = normalizeElementOptions(element.options, element.type);
 
     return {
         ...element,
+        label: normalizeTranslatable(element.label),
+        placeholder: normalizeTranslatable(element.placeholder),
+        hints: normalizeTranslatable(element.hints),
         options,
         correct_answer: element.correct_answer ?? [],
         children: element.children?.map(normalizeFormElement),
@@ -99,7 +129,6 @@ export function flattenElementsForSubmit(
             correct_answer: element.correct_answer ?? [],
             marks: element.marks ?? 1,
             required: element.required,
-            has_action: element.has_action,
             sort: index,
             type: element.type,
             condition_input_id: element.condition_input_id ?? null,
@@ -140,7 +169,6 @@ export function createFormElement(source: AvailableElement): FormElement {
         icon: type === 'group' ? 'mdi:image' : undefined,
         children: type === 'group' ? [] : undefined,
         required: false,
-        has_action: false,
         options: hasOptionsFieldType(type)
             ? createDefaultOptionLists()
             : null,

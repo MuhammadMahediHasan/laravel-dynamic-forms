@@ -15,8 +15,6 @@ return new class extends Migration
             $table->string('slug')->unique();
             $table->text('description')->nullable();
             $table->string('status')->default('Pending');
-            $table->dateTime('end_at')->nullable();
-            $table->boolean('is_public')->default(false);
             $table->timestamps();
             $table->softDeletes();
         });

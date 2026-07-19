@@ -7,7 +7,7 @@ import FormBuilderWorkspace from './components/FormBuilderWorkspace.vue';
 import SvgIcon from './components/SvgIcon.vue';
 import { useFormBuilderDragDrop } from './composables/useFormBuilderDragDrop';
 import { useFormBuilderElements } from './composables/useFormBuilderElements';
-import { fetchAvailableElements } from './composables/useFormBuilderSubmit';
+import { fetchAvailableElements, fetchBuilderConfig, fetchFormDetails } from './composables/useFormBuilderSubmit';
 import { DEFAULT_STATUS } from './constants/formBuilder';
 import type {
     AvailableElement,
@@ -18,12 +18,14 @@ import type {
 import { initializeFormElements, flattenElementsForSubmit } from './utils/formElementTree';
 import { getConfigLocales } from './utils/formOptions';
 
-const props = defineProps<FormBuilderProps>();
+const props = withDefaults(defineProps<FormBuilderProps>(), {
+    apiPrefix: '/api/v1/df',
+});
 
 const page = usePage();
 const attrs = useAttrs();
 const emit = defineEmits<{
-    (e: 'submit', payload: { form: any; elements: any[] }): void;
+    (e: 'success', data: any): void;
     (e: 'cancel'): void;
     (e: 'error', message: string): void;
 }>();
@@ -42,11 +44,21 @@ const formElements = ref<FormElement[]>(
 const availableElements = ref<AvailableElement[]>(
     props.availableElements || [],
 );
-const types = ref<TypeData[]>(props.types || []);
+const normalizeTypes = (rawTypes: any[]): TypeData[] => {
+    return (rawTypes || []).map((t) => {
+        if (typeof t === 'string') {
+            return { option: t, value: t };
+        }
+        return t;
+    });
+};
+
+const types = ref<TypeData[]>(normalizeTypes(props.types || []));
 const previewFormValues = ref<Record<string, unknown>>({});
 
 const form = useForm({
     form_id: props.editData?.form_id || '',
+    slug: props.editData?.slug || '',
     type:
         props.editData?.type ||
         props.presetType ||
@@ -54,19 +66,7 @@ const form = useForm({
     name: props.editData?.name || '',
     status: props.editData?.status || DEFAULT_STATUS,
     elements: [] as FormElement[],
-    quiz_title: props.editData?.quiz_title || null,
-    quiz_description: props.editData?.quiz_description || null,
-    passing_score: props.editData?.passing_score ?? 70,
-    max_attempts: props.editData?.max_attempts ?? null,
-    time_limit_minutes: props.editData?.time_limit_minutes ?? null,
-    shuffle_questions: props.editData?.shuffle_questions ?? false,
-    shuffle_options: props.editData?.shuffle_options ?? false,
-    show_result_immediately: props.editData?.show_result_immediately ?? true,
-    quiz_is_active: props.editData?.quiz_is_active ?? true,
     description: props.editData?.description ?? null,
-    end_at: props.editData?.end_at
-        ? new Date(props.editData.end_at as string | Date)
-        : null,
 });
 
 const {
@@ -74,8 +74,6 @@ const {
     getElementIndex,
     updateElement,
     removeElement,
-    moveElementUp,
-    moveElementDown,
     removeGroupFromChildren,
     allFormElementsFlattened,
     totalElementsCount,
@@ -96,17 +94,48 @@ const {
     removeGroupFromChildren,
 });
 
-const isProcessing = computed(() => props.isProcessing ?? false);
+const isSubmitting = ref(false);
+const isProcessing = computed(() => !!props.isProcessing || isSubmitting.value);
 
-const onSubmit = () => {
-    if (formElements.value.length === 0 && !props.editData?.form_id) {
+const isEditingMode = computed(() => !!props.editData?.form_id || !!props.editData?.slug || !!props.slug);
+
+const onSubmit = async () => {
+    if (formElements.value.length === 0 && !isEditingMode.value) {
         emit('error', 'Please add at least one form element before submitting.');
         return;
     }
-    emit('submit', {
-        form,
-        elements: flattenElementsForSubmit(formElements.value),
-    });
+
+    isSubmitting.value = true;
+    const isEdit = isEditingMode.value;
+    const formSlug = props.slug || form.slug;
+    const url = isEdit
+        ? `${props.apiPrefix}/${formSlug}`
+        : `${props.apiPrefix}`;
+
+    try {
+        const response = await (window as any).fetchWithCsrf(url, {
+            method: isEdit ? 'PUT' : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                ...form,
+                elements: flattenElementsForSubmit(formElements.value),
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            emit('error', errorData.message ?? 'Something went wrong. Please check the form.');
+            return;
+        }
+
+        const resData = await response.json();
+        emit('success', resData.data);
+    } catch (error: any) {
+        emit('error', error.message || 'Network error. Please try again.');
+        console.error('Submit error:', error);
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 
 const isGradableType = computed(
@@ -114,7 +143,7 @@ const isGradableType = computed(
 );
 
 const canSubmitForm = computed(
-    () => formElements.value.length > 0 || !!props.editData?.form_id,
+    () => formElements.value.length > 0 || isEditingMode.value,
 );
 
 const togglePreviewMode = () => {
@@ -126,7 +155,7 @@ const toggleAllFieldsCollapsed = () => {
 };
 
 const submitPreviewForm = () => {
-    console.error('Preview Form Data:', formElements.value);
+    console.log('Preview Form Submitted Values:', previewFormValues.value);
 };
 
 const loadAvailableElements = async () => {
@@ -142,7 +171,47 @@ const loadAvailableElements = async () => {
     }
 };
 
+const loadBuilderConfig = async () => {
+    isLoading.value = true;
+    try {
+        const config = await fetchBuilderConfig();
+        if (config.types) {
+            types.value = normalizeTypes(config.types);
+        }
+    } catch (error) {
+        console.error('Failed to fetch builder configuration:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
+const loadFormDetails = async () => {
+    if (!props.slug) return;
+    isLoading.value = true;
+    try {
+        const data = await fetchFormDetails(props.slug, props.apiPrefix);
+        form.form_id = data.form_id || '';
+        form.slug = data.slug || '';
+        form.type = data.type || '';
+        form.name = data.name || '';
+        form.status = data.status || DEFAULT_STATUS;
+        form.description = data.description ?? null;
+        formElements.value = initializeFormElements(data.elements);
+    } catch (error) {
+        emit('error', 'Failed to fetch form details');
+        console.error('Failed to fetch form details:', error);
+    } finally {
+        isLoading.value = false;
+    }
+};
+
 onMounted(async () => {
+    if (!props.types?.length) {
+        await loadBuilderConfig();
+    }
+    if (props.slug && !props.editData) {
+        await loadFormDetails();
+    }
     if (!props.availableElements?.length) {
         await loadAvailableElements();
     }
@@ -175,7 +244,7 @@ onMounted(async () => {
                         :form="form"
                         :types="types"
                         :is-loading="isLoading"
-                        :is-editing="!!editData?.form_id"
+                        :is-editing="isEditingMode"
                     />
                 </form>
 
@@ -230,8 +299,6 @@ onMounted(async () => {
                                         @drag-end="handleBuilderDragEnd"
                                         @update-element="updateElement"
                                         @remove-element="removeElement"
-                                        @move-up="moveElementUp"
-                                        @move-down="moveElementDown"
                                         @group-drag-enter="handleGroupDragEnter"
                                         @group-drag-leave="handleGroupDragLeave"
                                         @builder-drag-start="handleBuilderDragStartByType"
@@ -248,4 +315,3 @@ onMounted(async () => {
         </div>
     </div>
 </template>
-

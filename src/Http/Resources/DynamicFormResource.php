@@ -19,8 +19,6 @@ class DynamicFormResource extends JsonResource
             'slug' => $this->slug,
             'description' => $this->description,
             'status' => $this->status,
-            'end_at' => $this->end_at?->toIso8601String(),
-            'is_public' => $this->is_public,
             'elements' => $this->relationLoaded('inputs')
                 ? DynamicFormInputResource::collection($this->inputs)
                 : [],

@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, inject } from "vue";
 import SvgIcon from './SvgIcon.vue';
+import Label from './Label.vue';
+import Input from './Input.vue';
+import Select from './Select.vue';
 import { parseOptionItems, getConfigLocales, type FormElementOptions } from '../utils/formOptions';
+
+const customComponents = inject('df-components', {
+    Label,
+    Input,
+    Select,
+}) as Record<string, any>;
 
 function isImageUrl(val?: string): boolean {
     if (!val) return false;
@@ -13,26 +22,7 @@ function isImageUrl(val?: string): boolean {
     }
 }
 
-// Types & Interfaces
-interface LocalizedText extends Record<string, string> {}
-
-interface FormElement {
-    id: string;
-    type: string;
-    label: LocalizedText;
-    placeholder: LocalizedText;
-    hints?: LocalizedText;
-    icon?: string;
-    children?: FormElement[];
-    required: boolean;
-    has_action: boolean;
-    options: FormElementOptions | LocalizedText;
-    condition_input_id?: string | number | null;
-    condition_value?: string;
-    is_repeatable?: boolean;
-    repeat_min?: number;
-    repeat_max?: number | null;
-}
+import type { LocalizedText, FormElement } from '../types/formBuilder';
 
 interface Props {
     element: FormElement;
@@ -183,10 +173,9 @@ const inputProps = computed<InputAttributes>(() => {
         <template v-else>
             <div class="mb-2">
                 <div class="flex items-center justify-between mb-2">
-                    <label :for="element.id" class="font-medium">
+                    <component :is="customComponents.Label" :for="element.id" :required="element.required">
                         {{ element.label?.[currentLang] }}
-                        <span v-if="element.required" class="text-red-500">*</span>
-                    </label>
+                    </component>
                     <div v-if="lang === undefined" class="inline-flex rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
                         <button v-for="loc in resolvedLocales"
                                 :key="loc"
@@ -267,15 +256,14 @@ const inputProps = computed<InputAttributes>(() => {
             <div v-else-if="element.type === 'select'" class="mb-4 space-y-3">
                 <div v-for="(repeatIdx) in (repeatCounts[element.id] || 1)" :key="`repeat-${repeatIdx}`">
                     <div class="flex items-center gap-2">
-                        <select
-                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
-                            @change="(e) => updateFormValue(element.id, (e.target as HTMLSelectElement).value)"
-                        >
-                            <option value="">{{ element.placeholder?.[currentLang] || 'Select an option' }}</option>
-                            <option v-for="opt in inputProps.options" :key="opt.value" :value="opt.value">
-                                {{ opt.label }}
-                            </option>
-                        </select>
+                        <component
+                            :is="customComponents.Select"
+                            :id="element.id"
+                            :options="inputProps.options || []"
+                            :placeholder="element.placeholder?.[currentLang] || 'Select an option'"
+                            :modelValue="formValues[element.id]"
+                            @update:modelValue="(val: any) => updateFormValue(element.id, val)"
+                        />
                         <button
                             v-if="(repeatCounts[element.id] || 1) > (element.repeat_min || 1) && repeatIdx > 1"
                             type="button"
@@ -370,12 +358,12 @@ const inputProps = computed<InputAttributes>(() => {
             <div v-else class="mb-4 space-y-3">
                 <div v-for="(repeatIdx) in (repeatCounts[element.id] || 1)" :key="`repeat-${repeatIdx}`">
                     <div class="flex items-center gap-2">
-                        <input
+                        <component
+                            :is="customComponents.Input"
                             :type="element.type === 'date' ? 'date' : element.type"
-                            class="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
                             :placeholder="inputProps.placeholder"
-                            :value="formValues[element.id]"
-                            @input="(e) => updateFormValue(element.id, (e.target as HTMLInputElement).value)"
+                            :modelValue="formValues[element.id]"
+                            @update:modelValue="(val: any) => updateFormValue(element.id, val)"
                         />
                         <button
                             v-if="(repeatCounts[element.id] || 1) > (element.repeat_min || 1) && repeatIdx > 1"

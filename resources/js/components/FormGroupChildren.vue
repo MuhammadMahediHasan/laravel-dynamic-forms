@@ -5,32 +5,7 @@ import SvgIcon from './SvgIcon.vue'
 import Draggable from 'vuedraggable'
 import type { FormElementOptions } from '../utils/formOptions'
 
-interface LocalizedText {
-    en: string
-    bn: string
-}
-
-interface FormElementType {
-    id: string
-    input_id?: string | number
-    type: string
-    label: LocalizedText
-    placeholder: LocalizedText
-    hints?: LocalizedText
-    icon?: string
-    icon_path?: string
-    children?: FormElementType[]
-    required: boolean
-    has_action: boolean
-    options: FormElementOptions
-    correct_answer?: string[]
-    marks?: number
-    condition_input_id?: string | number | null
-    condition_value?: string
-    is_repeatable?: boolean
-    repeat_min?: number
-    repeat_max?: number | null
-}
+import type { FormElement as FormElementType } from '../types/formBuilder'
 
 interface Props {
     group: FormElementType
@@ -61,8 +36,6 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
     (e: 'update', id: string, field: string, value: any): void
     (e: 'remove', id: string): void
-    (e: 'moveUp', id: string): void
-    (e: 'moveDown', id: string): void
     (e: 'groupDragEnter', groupId: string, event: DragEvent): void
     (e: 'groupDragLeave', groupId: string, event: DragEvent): void
     (e: 'builderDragStart', type: string): void
@@ -202,8 +175,6 @@ const childCount = () => props.group.children?.length ?? 0
                                 class="!rounded-none !border-0 !shadow-none"
                                 @update="(id, field, value) => emit('update', id, field, value)"
                                 @remove="(id) => emit('remove', id)"
-                                @move-up="(id) => emit('moveUp', id)"
-                                @move-down="(id) => emit('moveDown', id)"
                             />
                             <FormGroupChildren
                                 :group="child"
@@ -219,8 +190,6 @@ const childCount = () => props.group.children?.length ?? 0
                                 :can-put-in-group="canPutInGroup"
                                 @update="(id, field, value) => emit('update', id, field, value)"
                                 @remove="(id) => emit('remove', id)"
-                                @move-up="(id) => emit('moveUp', id)"
-                                @move-down="(id) => emit('moveDown', id)"
                                 @group-drag-enter="(groupId, e) => emit('groupDragEnter', groupId, e)"
                                 @group-drag-leave="(groupId, e) => emit('groupDragLeave', groupId, e)"
                                 @builder-drag-start="(type) => emit('builderDragStart', type)"
@@ -242,8 +211,6 @@ const childCount = () => props.group.children?.length ?? 0
                             embedded
                             @update="(id, field, value) => emit('update', id, field, value)"
                             @remove="(id) => emit('remove', id)"
-                            @move-up="(id) => emit('moveUp', id)"
-                            @move-down="(id) => emit('moveDown', id)"
                         />
                     </div>
                 </template>

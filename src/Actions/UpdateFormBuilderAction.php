@@ -24,7 +24,7 @@ class UpdateFormBuilderAction
     {
         return DB::transaction(function () use ($form, $data, $elements) {
             $updateFields = [];
-            foreach (['type', 'name', 'slug', 'description', 'status', 'end_at', 'is_public'] as $key) {
+            foreach (['type', 'name', 'slug', 'description', 'status'] as $key) {
                 if (array_key_exists($key, $data)) {
                     $updateFields[$key] = $data[$key];
                 }

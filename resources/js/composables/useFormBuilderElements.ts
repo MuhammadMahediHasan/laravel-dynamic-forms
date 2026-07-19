@@ -32,48 +32,6 @@ export function useFormBuilderElements(formElements: Ref<FormElement[]>) {
         formElements.value = removeFromList(formElements.value);
     };
 
-    const reorderElement = (id: string, direction: 'up' | 'down'): void => {
-        const reorderInTree = (
-            list: FormElement[],
-            parent: FormElement | null,
-        ): boolean => {
-            const index = list.findIndex((element) => element.id === id);
-
-            if (index >= 0) {
-                const targetIndex = direction === 'up' ? index - 1 : index + 1;
-
-                if (targetIndex < 0 || targetIndex >= list.length) {
-                    return false;
-                }
-
-                const reordered = [...list];
-                [reordered[index], reordered[targetIndex]] = [
-                    reordered[targetIndex],
-                    reordered[index],
-                ];
-
-                if (parent) {
-                    parent.children = reordered;
-                } else {
-                    formElements.value = reordered;
-                }
-
-                return true;
-            }
-
-            return walkElements(list, (element) => {
-                if (element.children?.length) {
-                    return reorderInTree(element.children, element);
-                }
-            });
-        };
-
-        reorderInTree(formElements.value, null);
-    };
-
-    const moveElementUp = (id: string): void => reorderElement(id, 'up');
-    const moveElementDown = (id: string): void => reorderElement(id, 'down');
-
     const removeGroupFromChildren = (groupId: string): void => {
         walkElements(formElements.value, (element) => {
             if (element.id === groupId && element.children) {
@@ -118,8 +76,6 @@ export function useFormBuilderElements(formElements: Ref<FormElement[]>) {
         getElementIndex,
         updateElement,
         removeElement,
-        moveElementUp,
-        moveElementDown,
         removeGroupFromChildren,
         allFormElementsFlattened,
         totalElementsCount,

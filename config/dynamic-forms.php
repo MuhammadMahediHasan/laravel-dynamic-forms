@@ -3,7 +3,12 @@
 return [
     'table_prefix' => '',
     'route_prefix' => 'api/v1',
-    'middleware' => ['api'],
+    'middleware'   => ['api'],
+
+    // Optional auth guard applied to all package routes.
+    // Set to null to leave routes open (e.g. during development/demo).
+    // Set to 'web', 'sanctum', or any guard name to protect them.
+    'auth_guard' => null,
 
     // Supported locales for bilingual text fields and options
     'locales' => ['en'],
@@ -29,3 +34,4 @@ return [
     'register_routes' => true,
     'load_migrations' => true,
 ];
+
