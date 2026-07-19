@@ -59,8 +59,6 @@ Here is a complete, real-world wrapper component example (`resources/js/pages/Yo
 import { ref } from "vue";
 import { Head, router } from "@inertiajs/vue3";
 import AppLayout from "@/layouts/AppLayout.vue";
-import { useToast } from "primevue/usetoast";
-import Toast from "primevue/toast";
 
 // Import the decoupled form builder component from the vendor resources directory
 import FormBuilder from "@/vendor/dynamic-forms/Builder.vue";
@@ -70,13 +68,12 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-const toast = useToast();
 const isProcessing = ref(false);
 
 const breadcrumbs = [
   { title: "Dashboard", href: "/dashboard" },
-  { title: "Forms", href: "/dashboard/setup/dynamic-form" },
-  { title: "Configure Form", href: "/dashboard/setup/dynamic-form" },
+  { title: "Forms", href: "/admin/dynamic-form" },
+  { title: "Configure Form", href: "/admin/dynamic-form" },
 ];
 
 // 1. Handle Successful Form Builder Save
