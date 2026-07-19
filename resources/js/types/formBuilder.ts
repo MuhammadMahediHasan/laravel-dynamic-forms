@@ -70,12 +70,6 @@ export interface ApprovalHistoryEntry {
 }
 
 export interface FormBuilderProps {
-    types?: TypeData[];
-    status?: StatusData[];
-    editData?: EditData;
-    availableElements?: AvailableElement[];
-    presetType?: string | null;
-    isProcessing?: boolean;
     slug?: string;
     apiPrefix?: string;
 }

@@ -38,12 +38,8 @@ const isLoading = ref(false);
 const previewMode = ref(false);
 const previewLang = ref<string>(getConfigLocales()[0] || 'en');
 const allFieldsCollapsed = ref(true);
-const formElements = ref<FormElement[]>(
-    initializeFormElements(props.editData?.elements),
-);
-const availableElements = ref<AvailableElement[]>(
-    props.availableElements || [],
-);
+const formElements = ref<FormElement[]>([]);
+const availableElements = ref<AvailableElement[]>([]);
 const normalizeTypes = (rawTypes: any[]): TypeData[] => {
     return (rawTypes || []).map((t) => {
         if (typeof t === 'string') {
@@ -53,20 +49,17 @@ const normalizeTypes = (rawTypes: any[]): TypeData[] => {
     });
 };
 
-const types = ref<TypeData[]>(normalizeTypes(props.types || []));
+const types = ref<TypeData[]>([]);
 const previewFormValues = ref<Record<string, unknown>>({});
 
 const form = useForm({
-    form_id: props.editData?.form_id || '',
-    slug: props.editData?.slug || '',
-    type:
-        props.editData?.type ||
-        props.presetType ||
-        '',
-    name: props.editData?.name || '',
-    status: props.editData?.status || DEFAULT_STATUS,
+    form_id: '',
+    slug: '',
+    type: '',
+    name: '',
+    status: DEFAULT_STATUS,
     elements: [] as FormElement[],
-    description: props.editData?.description ?? null,
+    description: null as string | null,
 });
 
 const {
@@ -95,9 +88,9 @@ const {
 });
 
 const isSubmitting = ref(false);
-const isProcessing = computed(() => !!props.isProcessing || isSubmitting.value);
+const isProcessing = computed(() => isSubmitting.value);
 
-const isEditingMode = computed(() => !!props.editData?.form_id || !!props.editData?.slug || !!props.slug);
+const isEditingMode = computed(() => !!props.slug);
 
 const onSubmit = async () => {
     if (formElements.value.length === 0 && !isEditingMode.value) {
@@ -206,15 +199,11 @@ const loadFormDetails = async () => {
 };
 
 onMounted(async () => {
-    if (!props.types?.length) {
-        await loadBuilderConfig();
-    }
-    if (props.slug && !props.editData) {
-        await loadFormDetails();
-    }
-    if (!props.availableElements?.length) {
-        await loadAvailableElements();
-    }
+    await Promise.all([
+        loadBuilderConfig(),
+        loadAvailableElements(),
+        props.slug ? loadFormDetails() : Promise.resolve(),
+    ]);
 });
 </script>
 
@@ -237,8 +226,7 @@ onMounted(async () => {
             </button>
         </div>
 
-        <div class="ldf-card bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-4 md:p-6 shadow-sm">
-            <div class="ldf-content text-gray-900 dark:text-gray-100">
+        <div class="ldf-content text-gray-900 dark:text-gray-100">
                 <form class="ldf-form" @submit.prevent="onSubmit">
                     <FormBuilderSettingsForm
                         :form="form"
@@ -312,6 +300,5 @@ onMounted(async () => {
                     </div>
                 </section>
             </div>
-        </div>
     </div>
 </template>
