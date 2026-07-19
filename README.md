@@ -127,16 +127,10 @@ const handleError = (message: string) => {
 
 ### Props
 
-| Prop                | Type                 | Required | Description                                                           |
-| ------------------- | -------------------- | -------- | --------------------------------------------------------------------- |
-| `slug`              | `string`             | No       | Dynamic form slug to load and edit an existing form structure.        |
+| Prop                | Type                 | Required | Description                                                                |
+| ------------------- | -------------------- | -------- | -------------------------------------------------------------------------- |
+| `slug`              | `string`             | No       | Dynamic form slug to load and edit an existing form structure.             |
 | `apiPrefix`         | `string`             | No       | API prefix namespace for configuration and inputs (default: `/api/v1/df`). |
-| `types`             | `TypeData[]`         | No       | Custom fallback list of dynamic form types (e.g. `Form`, `Quiz`).     |
-| `status`            | `StatusData[]`       | No       | Custom fallback list of status options (e.g. `Draft`, `Published`).   |
-| `editData`          | `EditData`           | No       | Pre-existing form config to skip initial API load during edit mode.   |
-| `availableElements` | `AvailableElement[]` | No       | Preloaded catalog items to skip initial API load for elements.        |
-| `presetType`        | `string`             | No       | Prefilled default type for new form creations.                        |
-| `isProcessing`      | `boolean`            | No       | Shows loading wheel on the submit button while processing.            |
 
 ### Events
 
@@ -148,7 +142,7 @@ const handleError = (message: string) => {
 
 ## Custom UI Components (Provide/Inject)
 
-Both the form renderer (`RenderForm.vue`) and the form builder preview (`Preview.vue`) support layout-agnostic component overrides. You can inject your own UI components using Vue 3's `provide` API:
+Both the form renderer (`RenderForm.vue`) and the form builder preview support layout-agnostic component overrides. You can inject your own UI components using Vue 3's `provide` API:
 
 ```vue
 <script setup lang="ts">
