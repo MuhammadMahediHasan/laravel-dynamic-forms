@@ -129,7 +129,7 @@ const handleError = (message: string) => {
 
 | Prop                | Type                 | Required | Description                                                                |
 | ------------------- | -------------------- | -------- | -------------------------------------------------------------------------- |
-| `slug`              | `string`             | No       | Dynamic form slug to load and edit an existing form structure.             |
+| `slug`              | `string`             | No       | Pass a slug to put the builder in **Edit Mode** and load an existing form structure. Omit/leave blank to put in **Create Mode**. |
 | `apiPrefix`         | `string`             | No       | API prefix namespace for configuration and inputs (default: `/api/v1/df`). |
 
 ### Events
