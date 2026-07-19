@@ -23,13 +23,42 @@ const props = defineProps<{
 const className = computed(() => props.class || 'h-4 w-4');
 
 const pathContent = computed(() => {
-  const n = props.name.replace('mdi:', '').replace('-outline', '');
+  let n = props.name.replace('mdi:', '').replace('-outline', '');
+
+  // Backward compatible mappings for third-party icon packages
+  if (n.startsWith('system-uicons:')) {
+    const sub = n.replace('system-uicons:', '');
+    if (sub === 'write') n = 'text-short';
+    if (sub === 'radio-on') n = 'radiobox-marked';
+  } else if (n.startsWith('mage:')) {
+    const sub = n.replace('mage:', '');
+    if (sub === 'email') n = 'email';
+  } else if (n.startsWith('octicon:')) {
+    const sub = n.replace('octicon:', '');
+    if (sub === 'number-24') n = 'numeric';
+  } else if (n.startsWith('fluent:')) {
+    const sub = n.replace('fluent:', '');
+    if (sub === 'select-all-on-20-regular') n = 'arrow-down-drop-circle';
+  } else if (n.startsWith('proicons:')) {
+    const sub = n.replace('proicons:', '');
+    if (sub === 'checkbox-checked') n = 'checkbox-marked';
+  } else if (n.startsWith('lets-icons:')) {
+    const sub = n.replace('lets-icons:', '');
+    if (sub === 'date-today-duotone') n = 'calendar';
+  } else if (n.startsWith('solar:')) {
+    const sub = n.replace('solar:', '');
+    if (sub === 'paperclip-linear') n = 'file-upload';
+  }
+
   switch (n) {
     case 'text-short':
     case 'card-text':
       return `<path d="M4 6h16M4 12h10M4 18h16" />`;
     case 'text-long':
       return `<path d="M4 6h16M4 12h16M4 18h10" />`;
+    case 'email':
+    case 'mail':
+      return `<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />`;
     case 'numeric':
     case 'order-numeric-ascending':
       return `<rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><path d="M9 8h2v8M13 12h2v4" />`;
@@ -43,6 +72,9 @@ const pathContent = computed(() => {
       return `<circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" fill="currentColor" />`;
     case 'checkbox-marked':
       return `<rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><path d="M9 12l2 2 4-4" />`;
+    case 'format-header-1':
+    case 'header':
+      return `<path d="M4 12h16M4 4v16M20 4v16" />`;
     case 'calendar':
     case 'calendar-range':
       return `<rect x="3" y="4" width="18" height="18" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />`;
