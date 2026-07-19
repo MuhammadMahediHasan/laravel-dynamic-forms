@@ -3,9 +3,11 @@
 A highly decoupled, event-driven, layout-agnostic dynamic form builder package for Laravel and Vue 3.
 
 ### Form Builder Interface
+
 ![Form Builder Interface](art/builder.png)
 
 ### Form Preview Interface
+
 ![Form Preview Interface](art/preview.png)
 
 ---
@@ -79,29 +81,17 @@ const breadcrumbs = [
 
 // 1. Handle Successful Form Builder Save
 const handleSuccess = (savedForm: any) => {
-  toast.add({
-    severity: "success",
-    summary: "Success",
-    detail: "Form saved successfully",
-    life: 3000,
-  });
-  // Redirect to the forms list
-  router.get("/dashboard/setup/dynamic-form");
+  console.log("Form save successfully", savedForm);
 };
 
 // 2. Handle Navigation / Redirection
 const handleCancel = () => {
-  router.get("/dashboard/setup/dynamic-form");
+  console.log("Submission is canceled");
 };
 
 // 3. Handle Form Builder Errors (e.g. empty element submissions)
 const handleError = (message: string) => {
-  toast.add({
-    severity: "warn",
-    summary: "Warning",
-    detail: message,
-    life: 4000,
-  });
+  console.error(message);
 };
 </script>
 
@@ -133,10 +123,10 @@ const handleError = (message: string) => {
 
 ### Props
 
-| Prop                | Type                 | Required | Description                                                                |
-| ------------------- | -------------------- | -------- | -------------------------------------------------------------------------- |
-| `slug`              | `string`             | No       | Pass a slug to put the builder in **Edit Mode** and load an existing form structure. Omit/leave blank to put in **Create Mode**. |
-| `apiPrefix`         | `string`             | No       | API prefix namespace for configuration and inputs (default: `/api/v1/df`). |
+| Prop        | Type     | Required | Description                                                                                                                      |
+| ----------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `slug`      | `string` | No       | Pass a slug to put the builder in **Edit Mode** and load an existing form structure. Omit/leave blank to put in **Create Mode**. |
+| `apiPrefix` | `string` | No       | API prefix namespace for configuration and inputs (default: `/api/v1/df`).                                                       |
 
 ### Events
 
