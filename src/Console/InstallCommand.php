@@ -67,6 +67,14 @@ class InstallCommand extends Command
             $this->warn('package.json not found in the project root. Please manually install vuedraggable: npm install vuedraggable');
         }
 
+        // 3. Seed FormInputs catalog
+        if ($this->confirm('Would you like to seed the default Form Inputs catalog into your database?', true)) {
+            $this->call('db:seed', [
+                '--class' => 'MuhammadMahediHasan\\Df\\Database\\Seeders\\FormInputSeeder',
+            ]);
+            $this->info('Default Form Inputs catalog seeded successfully.');
+        }
+
         $this->info('Laravel Dynamic Forms package installation complete!');
 
         return self::SUCCESS;

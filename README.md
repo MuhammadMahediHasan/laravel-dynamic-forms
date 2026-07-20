@@ -29,15 +29,29 @@ A highly decoupled, event-driven, layout-agnostic dynamic form builder package f
 composer require muhammadmahedihasan/laravel-dynamic-forms
 ```
 
-### 2. Run the Install Command
+### 2. Run Database Migrations
 
-The install command will automatically publish the package configuration, publish the Vue builder assets into your host application (`resources/js/vendor/dynamic-forms`), and inspect your `package.json` file to inject the required `vuedraggable` peer dependency:
+Run Laravel's migration command to create the package tables (`form_inputs`, `dynamic_forms`, `form_elements`, `form_responses`, `form_response_items`):
+
+```bash
+php artisan migrate
+```
+
+### 3. Run the Install Command
+
+The install command will publish the package configuration, publish the Vue builder assets into your host application (`resources/js/vendor/dynamic-forms`), inject the `vuedraggable` peer dependency, and seed the default **Form Inputs** catalog into your database:
 
 ```bash
 php artisan dynamic-forms:install
 ```
 
-### 3. Rebuild Your Assets
+*(Optional)* If you ever need to manually seed or re-seed the default Form Inputs catalog, you can run:
+
+```bash
+php artisan db:seed --class="MuhammadMahediHasan\Df\Database\Seeders\FormInputSeeder"
+```
+
+### 4. Rebuild Your Assets
 
 Compile the published frontend assets using your asset pipeline (e.g., Vite):
 
